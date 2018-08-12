@@ -1,0 +1,206 @@
+# WEBACL
+
+# wafacl: # WAFRegional::WebACL
+#     metricName: owaspacl # <Environment> - <MetricName>
+#     name: owasp-acl
+#     rules:
+#       -
+#         ruleid: detectSsi #WAF RULES ruleid
+#         action: BLOCK # BLOCK | ALLOW | COUNT
+#         priority: 10
+#       -
+#         ruleid: detectSQLI #WAF RULES ruleid
+#         action: BLOCK # BLOCK | ALLOW | COUNT
+#         priority: 30
+
+
+# WAF RULES
+
+# wafrules:
+#   -
+#     ruleid: detectSsi #waf rule ruleid
+#     predicates:
+#       -
+#         conditionName: matchSsi
+#         negated: "false"  #true | false
+#         type: ByteMatch #IPMatch | ByteMatch | SqlInjectionMatch | GeoMatch | SizeConstraint | XssMatch | RegexMatch
+#   -
+#     ruleid: detectSQLI
+#     predicates:
+#       -
+#         conditionName: wafrSQLiSet
+#         negated: "false" #true | false
+#         type: SqlInjectionMatch
+
+
+# SQL injection match conditions
+
+# control_sqlinjectionmatchset:
+#   -
+#     name: wafrSQLiSet
+#     sqlinjectionmatchtuples:
+#       -
+#         field_type: BODY #URI | QUERY_STRING | HEADER | METHOD | BODY
+#         texttransformation: HTML_ENTITY_DECODE #CMD_LINE | COMPRESS_WHITE_SPACE | HTML_ENTITY_DECODE | LOWERCASE | URL_DECODE | NONE
+#       -
+#         field_type: BODY
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: HEADER
+#         field_data: Cookie #Type of Header
+#         texttransformation: HTML_ENTITY_DECODE
+#       -
+#         field_type: HEADER
+#         field_data: Cookie
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: QUERY_STRING
+#         texttransformation: HTML_ENTITY_DECODE
+#       -
+#         field_type: QUERY_STRING
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: URI
+#         texttransformation: HTML_ENTITY_DECODE
+#       -
+#         field_type: URI
+#         texttransformation: URL_DECODE
+
+# String match conditions
+
+# control_bytematchset:
+#   -
+#     name: matchSsi
+#     bytematchtuples:
+#       -
+#         #field_data:  #optional
+#         field_type: URI #URI | QUERY_STRING | HEADER | METHOD | BODY
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .conf
+#         texttransformation: LOWERCASE
+#       -
+#         field_type: URI
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .ini
+#         texttransformation: LOWERCASE
+#       -
+#         field_type: URI
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .cfg
+#         texttransformation: LOWERCASE
+#       -
+#         field_type: URI
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .backup
+#         texttransformation: LOWERCASE
+#       -
+#         field_type: URI
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .log
+#         texttransformation: LOWERCASE
+#       -
+#         field_type: URI
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .bak
+#         texttransformation: LOWERCASE
+#       -
+#         field_type: URI
+#         positionalconstraint: ENDS_WITH
+#         targetstring: .config
+#         texttransformation: LOWERCASE
+
+
+# IP match conditions
+
+# control_ipset:
+#   -
+#     name: wafrBlacklistIpSet
+#     ipsetdescriptors:
+#       -
+#         type: IPV4 #IPV4 | IPV6
+#         value: 10.0.0.0/8
+#       -
+#         type: IPV4 #default IPV4
+#         value: 192.168.0.0/16
+#       -
+#         type: IPV4
+#         value: 169.254.0.0/16
+#       -
+#         type: IPV4
+#         value: 172.16.0.0/16
+#       -
+#         value: 127.0.0.1/32 #default IPV4
+#   -
+#     name: wafrAdminRemoteAddrIpSet
+#     ipsetdescriptors:
+#       -
+#         type: IPV4 #IPV4 | IPV6
+#         value: 10.0.0.0/8
+
+
+# Size constraint conditions
+
+# control_sizeconstraintset:
+#   -
+#     name: wafrSizeRestrictionSet
+#     sizeconstraints:
+#       -
+#         comparisonoperator: GT
+#         field_type: URI #URI | QUERY_STRING | HEADER | METHOD | BODY
+#         size: 102400
+#         texttransformation: NONE
+#       -
+#         comparisonoperator: GT
+#         field_type: QUERY_STRING
+#         size: 102400
+#         texttransformation: NONE
+#       -
+#         comparisonoperator: GT
+#         field_type: URI
+#         size: 102400
+#         texttransformation: NONE
+#       -
+#         comparisonoperator: GT
+#         field_data: cookie
+#         field_type: HEADER
+#         size: 102400
+#         texttransformation: NONE
+
+
+
+# Cross-site scripting match conditions
+
+# control_wafrxssset:
+#   -
+#     name: wafrXSSSet
+#     xssmatchtuples:
+#       -
+#         #field_data:
+#         field_type: URI #URI | QUERY_STRING | HEADER | METHOD | BODY
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: URI
+#         texttransformation: HTML_ENTITY_DECODE
+#       -
+#         field_type: QUERY_STRING
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: QUERY_STRING
+#         texttransformation: HTML_ENTITY_DECODE
+#       -
+#         field_type: BODY
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: BODY
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: URI
+#         texttransformation: HTML_ENTITY_DECODE
+#       -
+#         field_type: HEADER
+#         field_data: cookie
+#         texttransformation: URL_DECODE
+#       -
+#         field_type: HEADER
+#         field_data: cookie
+#         texttransformation: HTML_ENTITY_DECODE
