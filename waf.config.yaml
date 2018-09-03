@@ -112,30 +112,30 @@
 
 # IP match conditions
 
-# control_ipset:
-#   -
-#     name: wafrBlacklistIpSet
-#     ipsetdescriptors:
-#       -
-#         type: IPV4 #IPV4 | IPV6
-#         value: 10.0.0.0/8
-#       -
-#         type: IPV4 #default IPV4
-#         value: 192.168.0.0/16
-#       -
-#         type: IPV4
-#         value: 169.254.0.0/16
-#       -
-#         type: IPV4
-#         value: 172.16.0.0/16
-#       -
-#         value: 127.0.0.1/32 #default IPV4
-#   -
-#     name: wafrAdminRemoteAddrIpSet
-#     ipsetdescriptors:
-#       -
-#         type: IPV4 #IPV4 | IPV6
-#         value: 10.0.0.0/8
+control_ipset:
+  -
+    name: wafrBlacklistIpSet
+    ipsetdescriptors:
+  #     -
+  #       type: IPV4 #IPV4 | IPV6
+  #       value: 10.0.0.0/8
+  #     -
+  #       type: IPV4 #default IPV4
+  #       value: 192.168.0.0/16
+  #     -
+  #       type: IPV4
+  #       value: 169.254.0.0/16
+  #     -
+  #       type: IPV4
+  #       value: 172.16.0.0/16
+      -
+        value: 127.0.0.1/32 #default IPV4
+  # -
+  #   name: wafrAdminRemoteAddrIpSet
+  #   ipsetdescriptors:
+  #     -
+  #       type: IPV4 #IPV4 | IPV6
+  #       value: 10.0.0.0/8
 
 
 # Size constraint conditions
