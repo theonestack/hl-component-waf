@@ -1,13 +1,13 @@
-HighlanderComponent do
-  DependsOn 'vpc@1.0.4'
+CfhighlanderTemplate do
 
   Description "#{component_name} - #{component_version}"
 
   Parameters do
-    StackParam 'EnvironmentName', 'dev', isGlobal: true
-    StackParam 'EnvironmentType', 'development', isGlobal: true
+    ComponentParam 'EnvironmentName', 'dev', isGlobal: true
+    ComponentParam 'EnvironmentType', 'development', isGlobal: true
+    ComponentParam 'AssociatedResourceArn', ''
   end
 
-
+  LambdaFunctions 'custom_resource_functions' if defined? custom_resource_functions
 
 end
