@@ -8,6 +8,8 @@ CloudFormation do
 
   Description "#{component_name} - #{component_version}"
 
+  safe_stack_name = FnJoin('', FnSplit('-', Ref('AWS::StackName')))
+
   # SQL injection match conditions
   sql_injection_match_sets.each do |name, sets|
     tuple_list = []
@@ -148,7 +150,7 @@ CloudFormation do
     Resource(safe_name(name)) do
       Type("AWS::#{type}::Rule")
       Property("Name", FnSub("${EnvironmentName}-#{name}"))
-      Property("MetricName", FnSub("${EnvironmentName}#{safe_name(name)}"))
+      Property("MetricName", FnJoin('', [safe_stack_name, safe_name(name)]))
       Property("Predicates",  predicates)
     end
 
@@ -168,7 +170,7 @@ CloudFormation do
     Resource("WebACL") do
       Type("AWS::#{type}::WebACL")
       Property("Name", FnSub("${EnvironmentName}-#{web_acl['name']}"))
-      Property("MetricName", FnSub("${EnvironmentName}#{safe_name(web_acl['name'])}"))
+      Property("MetricName", FnJoin('', [safe_stack_name, safe_name(web_acl['name'])]))
       Property("DefaultAction", { "Type" => web_acl['default_action'] })
       Property("Rules", rules)
     end
