@@ -1,165 +1,213 @@
 CloudFormation do
 
+  if defined? type and type.downcase == 'regional'
+    type = 'WAFRegional'
+  else
+    type = 'WAF'
+  end
+  Condition("AssociateWithResource", FnNot(FnEquals(Ref('AssociatedResourceArn'), '')))
+  
   Description "#{component_name} - #{component_version}"
 
+  safe_stack_name = FnJoin('', FnSplit('-', Ref('AWS::StackName')))
+
   # SQL injection match conditions
-  control_sqlinjectionmatchset.each do |sqlinjectionmatchset|
-      sqlinjectionmatchtuple_list = []
-      sqlinjectionmatchset["sqlinjectionmatchtuples"].each do |sqlinjectionmatchtuple|
+  sql_injection_match_sets.each do |name, sets|
+    tuple_list = []
 
-          object = {}
-          object[:FieldToMatch] = {}
-          object[:FieldToMatch][:Type] = sqlinjectionmatchtuple["field_type"]
-          object[:TextTransformation] = sqlinjectionmatchtuple["texttransformation"]
-          object[:FieldToMatch][:Data] = sqlinjectionmatchtuple["field_data"] if sqlinjectionmatchtuple.has_key?("field_data")
-          sqlinjectionmatchtuple_list << object
+    sets.each do |tuple|
+      object = {}
+      object[:FieldToMatch] = {}
+      object[:FieldToMatch][:Type] = tuple["field_type"]
+      object[:FieldToMatch][:Data] = tuple["field_data"] if tuple.has_key?("field_data")
+      object[:TextTransformation] = tuple["text_transformation"]
 
-      end
+      tuple_list << object
+    end
 
-      Resource("#{sqlinjectionmatchset["name"]}") do
-        Type("AWS::WAF::SqlInjectionMatchSet")
-        Property("Name", FnJoin("-", [ Ref('EnvironmentName'), sqlinjectionmatchset["name"]]))
-        Property("SqlInjectionMatchTuples", sqlinjectionmatchtuple_list )
-      end
+    Resource("#{safe_name(name)}MatchSet") do
+      Type("AWS::#{type}::SqlInjectionMatchSet")
+      Property("Name", FnSub("${EnvironmentName}-#{name}"))
+      Property("SqlInjectionMatchTuples", tuple_list)
+    end
 
-  end if defined? control_sqlinjectionmatchset
+  end if defined? sql_injection_match_sets
 
   # Cross-site scripting match conditions
-  control_wafrxssset.each do |wafrxssset|
+  xss_match_sets.each do |name, sets|
+    tuple_list = []
 
-      xssmatchtuple_list = []
-      wafrxssset["xssmatchtuples"].each do |xssmatchtuple|
+    sets.each do |tuple|
+      object = {}
+      object[:FieldToMatch] = {}
+      object[:FieldToMatch][:Type] = tuple["field_type"]
+      object[:FieldToMatch][:Data] = tuple["field_data"] if tuple.has_key?("field_data")
+      object[:TextTransformation] = tuple["text_transformation"]
 
-        object = {}
-        object[:FieldToMatch] = {}
-        object[:FieldToMatch][:Type] = xssmatchtuple["field_type"]
-        object[:TextTransformation] = xssmatchtuple["texttransformation"]
-        object[:FieldToMatch][:Data] = xssmatchtuple["field_data"] if xssmatchtuple.has_key?("field_data")
-        xssmatchtuple_list << object
+      tuple_list << object
+    end
 
-      end
+    Resource("#{safe_name(name)}MatchSet") do
+      Type("AWS::#{type}::XssMatchSet")
+      Property("Name", FnSub("${EnvironmentName}-#{name}"))
+      Property("XssMatchTuples", tuple_list)
+    end
 
-      Resource("#{wafrxssset["name"]}") do
-        Type("AWS::WAF::XssMatchSet")
-        Property("Name", FnJoin("-", [Ref("EnvironmentName"), wafrxssset["name"]]))
-        Property("XssMatchTuples", xssmatchtuple_list )
-      end
-
-  end if defined? control_wafrxssset
+  end if defined? xss_match_sets
 
   # Size constraint conditions
-  control_sizeconstraintset.each do |sizeconstraintset|
+  size_constraint_sets.each do |name, sets|
+    tuple_list = []
 
-    sizeconstraint_list = []
-    sizeconstraintset["sizeconstraints"].each do |sizeconstraint|
-
+    sets.each do |tuple|
       object = {}
       object[:FieldToMatch] = {}
-      object[:FieldToMatch][:Type] = sizeconstraint["field_type"]
-      object[:TextTransformation] = sizeconstraint["texttransformation"]
-      object[:FieldToMatch][:Data] = sizeconstraint["field_data"] if sizeconstraint.has_key?("field_data")
-      sizeconstraint_list << object
+      object[:FieldToMatch][:Type] = tuple["field_type"]
+      object[:FieldToMatch][:Data] = tuple["field_data"] if tuple.has_key?("field_data")
+      object[:TextTransformation] = tuple["text_transformation"]
+      object[:ComparisonOperator] = tuple["comparison_operator"]
+      object[:Size] = tuple['size']
 
+      tuple_list << object
     end
 
-    Resource("#{sizeconstraintset["name"]}") do
-      Type("AWS::WAF::SizeConstraintSet")
-      Property("Name", FnJoin("-", [Ref("EnvironmentName"), sizeconstraintset["name"]]))
-      Property("SizeConstraints", sizeconstraint_list )
+    Resource("#{safe_name(name)}Set") do
+      Type("AWS::#{type}::SizeConstraintSet")
+      Property("Name", FnSub("${EnvironmentName}-#{name}"))
+      Property("SizeConstraints", tuple_list)
     end
 
-  end if defined? control_sizeconstraintset
+  end if defined? size_constraint_sets
 
-  control_bytematchset.each do |bytematchset|
+  # Byte match sets
+  byte_match_sets.each do |name, sets|
+    tuple_list = []
 
-    bytematchtuple_list = []
-    bytematchset["bytematchtuples"].each do |bytematchtuple|
-
+    sets.each do |tuple|
       object = {}
       object[:FieldToMatch] = {}
-      object[:TextTransformation] = bytematchtuple["texttransformation"]
-      object[:PositionalConstraint] = bytematchtuple["positionalconstraint"]
-      object[:TargetString] = bytematchtuple["targetstring"]
-      object[:FieldToMatch][:Type] = bytematchtuple["field_type"]
-      object[:FieldToMatch][:Data] = bytematchtuple["field_data"] if bytematchtuple.has_key?("field_data")
-      bytematchtuple_list << object
+      object[:FieldToMatch][:Type] = tuple["field_type"]
+      object[:FieldToMatch][:Data] = tuple["field_data"] if tuple.has_key?("field_data")
+      object[:TextTransformation] = tuple["text_transformation"]
+      object[:PositionalConstraint] = tuple["positional_constraint"]
+      object[:TargetString] = tuple["target_string"]
 
-
+      tuple_list << object
     end
 
-    Resource("#{bytematchset["name"]}") do
-      Type("AWS::WAF::ByteMatchSet")
-      Property("Name", FnJoin("-", [Ref("EnvironmentName"), bytematchset["name"]]))
-      Property("ByteMatchTuples", bytematchtuple_list )
+    Resource("#{safe_name(name)}MatchSet") do
+      Type("AWS::#{type}::ByteMatchSet")
+      Property("Name", FnSub("${EnvironmentName}-#{name}"))
+      Property("ByteMatchTuples", tuple_list)
     end
 
-  end if defined? control_bytematchset
+  end if defined? byte_match_sets
 
-  control_ipset.each do |ipset|
+  # IP descriptor sets
+  ip_sets.each do |name, sets|
+    descriptor_list = []
 
-    ipsetdescriptor_list = []
-    ipset["ipsetdescriptors"].each do |ipsetdescriptor|
-      ipsetdescriptor_list << {
-        Type: ipsetdescriptor["type"] || "IPV4",
-        Value: ipsetdescriptor["value"]
+    sets.each do |set|
+      descriptor_list << {
+        Type: set["type"] || "IPV4",
+        Value: set["value"]
       }
     end
 
-    Resource("#{ipset["name"]}") do
-      Type("AWS::WAF::IPSet")
-      Property("Name", FnJoin("-", [Ref("EnvironmentName"), ipset["name"]]))
-      Property("IPSetDescriptors", ipsetdescriptor_list )
+    Resource("#{safe_name(name)}IPSet") do
+      Type("AWS::#{type}::IPSet")
+      Property("Name", FnSub("${EnvironmentName}-#{name}"))
+      Property("IPSetDescriptors", descriptor_list)
     end
 
-  end if defined? control_ipset
+  end if defined? ip_sets
 
   ## Create the Rules
-  wafrules.each do |wafrule|
-    waf_predicates = []
-    wafrule["predicates"].each do |predicate|
-      if predicate['type']=="RegexMatch"
-         waf_predicates << {
-          DataId: FnGetAtt(predicate["conditionName"],'MatchID'),
+  rules.each do |name, config|
+    predicates = []
+
+    config["predicates"].each do |predicate|
+      case predicate['type']
+      when 'RegexMatch'
+        data_id = FnGetAtt(safe_name(predicate["condition_name"]), 'MatchID')  # A custom resource
+
+      when 'ByteMatch', 'SqlInjectionMatch', 'XssMatch'
+        data_id = Ref(safe_name(predicate["condition_name"]) + 'MatchSet')
+
+      when 'SizeConstraint'
+        data_id = Ref(safe_name(predicate["condition_name"]) + 'Set')
+
+      when 'IPMatch'
+        data_id = Ref(safe_name(predicate["condition_name"]) + 'IPSet')
+      end
+
+      predicates << {
+          DataId: data_id,
           Negated: predicate["negated"],
           Type: predicate["type"]
         }
-      else
-         waf_predicates << {
-          DataId: Ref( "#{predicate["conditionName"]}" ),
-          Negated: predicate["negated"],
-          Type: predicate["type"]
+    end
+
+    Resource(safe_name(name)) do
+      Type("AWS::#{type}::Rule")
+      Property("Name", FnSub("${EnvironmentName}-#{name}"))
+      Property("MetricName", FnJoin('', [safe_stack_name, safe_name(name)]))
+      Property("Predicates",  predicates)
+    end
+
+  end if defined? rules
+
+  if defined? web_acl
+    rules = []
+
+    web_acl['rules'].each do |name, config|
+      rules << {
+        Action: { Type: config["action"] },
+        Priority: config["priority"],
+        RuleId: Ref(safe_name(name))
+      }
+    end
+
+    Resource("WebACL") do
+      Type("AWS::#{type}::WebACL")
+      Property("Name", FnSub("${EnvironmentName}-#{web_acl['name']}"))
+      Property("MetricName", FnJoin('', [safe_stack_name, safe_name(web_acl['name'])]))
+      Property("DefaultAction", { "Type" => web_acl['default_action'] })
+      Property("Rules", rules)
+    end
+
+    Output('WebACL', Ref('WebACL'))
+
+    if type == 'WAFRegional'
+      Resource("WebACLAssociation") do
+        Condition 'AssociateWithResource'
+        Type "AWS::WAFRegional::WebACLAssociation"
+        Property("ResourceArn", Ref("AssociatedResourceArn"))
+        Property("WebACLId", Ref('WebACL'))
+      end
+    end
+  end
+
+  if defined? custom_resource_rules
+    custom_resource_rules.each do |name, config|
+
+      if config['type'] == 'RateBasedRule'
+        Resource("#{safe_name(name)}RateBasedRule") {
+          Type 'Custom::WAFRateLimit'
+          Property('ServiceToken', FnGetAtt(config['function_name'], 'Arn'))
+          Property('RuleName',  FnSub("${EnvironmentName}-#{name}"))
+          Property('IpSetName', FnSub("${EnvironmentName}-#{name}-ip-set"))
+          Property('Region',    Ref("AWS::Region"))
+          Property('WebACLId',  Ref(config['web_acl_id']))
+          Property('Rate',      config['rate'])
+          Property('Negated',   config['negated'])
+          Property('Action',    config['action'])
+          Property('Priority',  config['priority'])
+          Property('Regional',  config['regional'])
+          Property('IPSet',     generate_waf_ip_set(cr_ip_sets, ['rate_limit']))
         }
       end
     end
-
-    Resource(wafrule["ruleid"]) do
-      Type("AWS::WAF::Rule")
-      Property("MetricName", FnJoin("", [Ref("EnvironmentName"), wafrule["ruleid"] ]))
-      Property("Name", FnJoin("-", [Ref("EnvironmentName"), wafrule["ruleid"] ]))
-      Property("Predicates",  waf_predicates )
-    end
-
-  end if defined? wafrules
-
-  if defined? wafacl
-    waf_rules = []
-    wafacl['rules'].each do |rule|
-      waf_rules << {
-        Action: { Type: rule["action"] },
-        Priority: rule["priority"],
-        RuleId: Ref(rule["ruleid"])
-      }
-    end
-
-    Resource("wafrOwaspACL") do
-      Type("AWS::WAF::WebACL")
-      Property("MetricName", FnJoin("", [ Ref("EnvironmentName"), wafacl['metricName'] ]))
-      Property("Name", FnJoin("-", [Ref("EnvironmentName"), wafacl['name'] ]))
-      Property("DefaultAction", { "Type" => "ALLOW" })
-      Property("Rules", waf_rules)
-    end
-
-    Output('WAFWebACL', Ref('wafrOwaspACL'))
   end
 
 end
