@@ -5,7 +5,8 @@ CloudFormation do
   else
     type = 'WAF'
   end
-
+  Condition("AssociateWithResource", FnNot(FnEquals(Ref('AssociatedResourceArn'), '')))
+  
   Description "#{component_name} - #{component_version}"
 
   safe_stack_name = FnJoin('', FnSplit('-', Ref('AWS::StackName')))
@@ -177,9 +178,9 @@ CloudFormation do
 
     Output('WebACL', Ref('WebACL'))
 
-    if type.downcase == 'regional'
+    if type == 'WAFRegional'
       Resource("WebACLAssociation") do
-        Condition FnNot(FnEquals(Ref('AssociatedResourceArn'), ''))
+        Condition 'AssociateWithResource'
         Type "AWS::WAFRegional::WebACLAssociation"
         Property("ResourceArn", Ref("AssociatedResourceArn"))
         Property("WebACLId", Ref('WebACL'))
