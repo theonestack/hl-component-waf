@@ -181,7 +181,7 @@ CloudFormation do
       Resource("WebACLAssociation") do
         Condition FnNot(FnEquals(Ref('AssociatedResourceArn'), ''))
         Type "AWS::WAFRegional::WebACLAssociation"
-        Property("ResourceArn", Ref("AssociatedResource"))
+        Property("ResourceArn", Ref("AssociatedResourceArn"))
         Property("WebACLId", Ref('WebACL'))
       end
     end
