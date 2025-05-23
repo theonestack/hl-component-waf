@@ -1,0 +1,36 @@
+test_metadata:
+  type: config
+  name: default
+  description: default waf configuration test
+
+scope: REGIONAL
+name: test-waf
+description: Test WAF ACL
+
+rules:
+  - name: ip-rate-limit
+    metric_name: IPRateLimit
+    priority: 1
+    action: BLOCK
+    rule_type: RATE_BASED
+    statement:
+      rate_based_statement:
+        limit: 2000
+        aggregate_key_type: IP
+
+  - name: sql-injection
+    metric_name: SQLInjection
+    priority: 2
+    action: BLOCK
+    rule_type: REGULAR
+    statement:
+      sql_injection_match_statement:
+        field_to_match:
+          body: {}
+        text_transformation:
+          - priority: 1
+            type: URL_DECODE
+          - priority: 2
+            type: HTML_ENTITY_DECODE
+
+default_action: ALLOW

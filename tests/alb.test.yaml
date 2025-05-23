@@ -1,0 +1,27 @@
+test_metadata:
+  type: config
+  name: alb
+  description: WAF configuration for ALB test
+
+scope: REGIONAL
+alb_arn: arn:aws:elasticloadbalancing:ap-southeast-2:012345678901:loadbalancer/app/my-alb/abcdef123456
+
+rules:
+  - name: rate-limit
+    metric_name: RateLimit
+    priority: 1
+    rate_limit: 1000
+    action: BLOCK
+
+  - name: xss-protection
+    metric_name: XSSProtection
+    priority: 2
+    action: BLOCK
+    rule_type: REGULAR
+    statement:
+      xss_match_statement:
+        field_to_match:
+          body: {}
+        text_transformation:
+          - priority: 1
+            type: NONE

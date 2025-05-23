@@ -1,0 +1,36 @@
+test_metadata:
+  type: config
+  name: cloudfront
+  description: CloudFront WAF configuration test
+
+scope: CLOUDFRONT
+name: test-cloudfront-waf
+description: Test CloudFront WAF ACL
+
+rules:
+  - name: geo-block
+    metric_name: GeoBlock
+    priority: 1
+    action: BLOCK
+    rule_type: REGULAR
+    statement:
+      geo_match_statement:
+        country_codes:
+          - CN
+          - RU
+          - KP
+
+  - name: xss-protection
+    metric_name: XSSProtection
+    priority: 2
+    action: BLOCK
+    rule_type: REGULAR
+    statement:
+      xss_match_statement:
+        field_to_match:
+          body: {}
+        text_transformation:
+          - priority: 1
+            type: NONE
+
+default_action: ALLOW
