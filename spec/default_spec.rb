@@ -10,36 +10,57 @@ describe 'default waf configuration' do
   
   let(:template) { YAML.load_file("#{File.dirname(__FILE__)}/../out/tests/default/waf.compiled.yaml") }
   
-  context 'Resource WebACL' do
-    let(:properties) { template["Resources"]["WebACL"]["Properties"] }
+  context 'Resources' do
+    let(:resources) { template["Resources"] }
 
-    it 'has basic properties' do
-      expect(properties["Name"]).to eq({"Fn::Sub"=>"${EnvironmentName}-test-waf"})
-      expect(properties["Description"]).to eq("Test WAF ACL")
-      expect(properties["Scope"]).to eq("REGIONAL")
-      expect(properties["DefaultAction"]).to eq({"Allow"=>{}})
+    context 'IPSet' do
+      let(:properties) { resources["wafrBlacklistIpSet"]["Properties"] }
+
+      it 'has basic properties' do
+        expect(properties["Name"]).to eq({"Fn::Join"=>["-", [{"Ref"=>"EnvironmentName"}, "wafrBlacklistIpSet"]]})
+        expect(properties["IPSetDescriptors"]).to include(
+          {"Type"=>"IPV4", "Value"=>"192.0.2.44/32"}
+        )
+      end
     end
 
-    it 'has rules configured' do
-      rules = properties["Rules"]
-      expect(rules.length).to eq(2)
+    context 'Rule' do
+      let(:properties) { resources["wafrIPBlockRule"]["Properties"] }
 
-      # IP Rate Limit Rule
-      rate_rule = rules.find { |r| r["Name"] == "ip-rate-limit" }
-      expect(rate_rule["Priority"]).to eq(1)
-      expect(rate_rule["Action"]).to eq({"Block"=>{}})
-      expect(rate_rule["Statement"]["RateBasedStatement"]["Limit"]).to eq(2000)
-      expect(rate_rule["Statement"]["RateBasedStatement"]["AggregateKeyType"]).to eq("IP")
+      it 'has basic properties' do
+        expect(properties["Name"]).to eq({"Fn::Join"=>["-", [{"Ref"=>"EnvironmentName"}, "wafrIPBlockRule"]]})
+        expect(properties["MetricName"]).to eq({"Fn::Join"=>["", [{"Ref"=>"EnvironmentName"}, "wafrIPBlockRule"]]})
+      end
 
-      # SQL Injection Rule
-      sql_rule = rules.find { |r| r["Name"] == "sql-injection" }
-      expect(sql_rule["Priority"]).to eq(2)
-      expect(sql_rule["Action"]).to eq({"Block"=>{}})
-      expect(sql_rule["Statement"]["SqlInjectionMatchStatement"]["FieldToMatch"]).to eq({"Body"=>{}})
-      expect(sql_rule["Statement"]["SqlInjectionMatchStatement"]["TextTransformations"]).to include(
-        {"Priority"=>1, "Type"=>"URL_DECODE"},
-        {"Priority"=>2, "Type"=>"HTML_ENTITY_DECODE"}
-      )
+      it 'has predicates configured' do
+        expect(properties["Predicates"]).to include(
+          {
+            "DataId"=>{"Ref"=>"wafrBlacklistIpSet"},
+            "Negated"=>false,
+            "Type"=>"IPMatch"
+          }
+        )
+      end
+    end
+
+    context 'WebACL' do
+      let(:properties) { resources["wafrOwaspACL"]["Properties"] }
+
+      it 'has basic properties' do
+        expect(properties["Name"]).to eq({"Fn::Join"=>["-", [{"Ref"=>"EnvironmentName"}, "test-waf"]]})
+        expect(properties["MetricName"]).to eq({"Fn::Join"=>["", [{"Ref"=>"EnvironmentName"}, "TestWAF"]]})
+        expect(properties["DefaultAction"]).to eq({"Type"=>"ALLOW"})
+      end
+
+      it 'has rules configured' do
+        expect(properties["Rules"]).to include(
+          {
+            "Action"=>{"Type"=>"BLOCK"},
+            "Priority"=>1,
+            "RuleId"=>{"Ref"=>"wafrIPBlockRule"}
+          }
+        )
+      end
     end
   end
 
@@ -47,15 +68,7 @@ describe 'default waf configuration' do
     let(:outputs) { template["Outputs"] }
 
     it 'has web acl id' do
-      expect(outputs["WebACLId"]).to include(
-        "Value" => {"Ref"=>"WebACL"}
-      )
-    end
-
-    it 'has web acl arn' do
-      expect(outputs["WebACLArn"]).to include(
-        "Value" => {"Fn::GetAtt"=>["WebACL", "Arn"]}
-      )
+      expect(outputs["WAFWebACL"]).to eq({"Value"=>{"Ref"=>"wafrOwaspACL"}})
     end
   end
 end
