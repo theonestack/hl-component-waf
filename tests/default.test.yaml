@@ -1,0 +1,25 @@
+test_metadata:
+  type: config
+  name: default
+  description: default waf configuration test
+
+control_ipset:
+  - name: wafrBlacklistIpSet
+    ipsetdescriptors:
+      - type: IPV4
+        value: 192.0.2.44/32
+
+wafrules:
+  - ruleid: wafrIPBlockRule
+    predicates:
+      - conditionName: wafrBlacklistIpSet
+        negated: false
+        type: IPMatch
+
+wafacl:
+  name: test-waf
+  metricName: TestWAF
+  rules:
+    - ruleid: wafrIPBlockRule
+      action: BLOCK
+      priority: 1
